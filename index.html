@@ -90,6 +90,7 @@
     text-align:center;margin-bottom:8px;position:relative;z-index:2;
   }
   .eyebrow span{color:var(--accent);}
+  .mobile-title{display:none;}
 
   .hero-row{
     display:grid;
@@ -205,6 +206,9 @@
   /* ---------- mobile hero fit ---------- */
   @media(max-width:760px){
     .flank{display:none;}
+    .hero-row{grid-template-columns:1fr;justify-items:center;}
+    .mobile-title{display:block;text-align:center;font-size:clamp(24px,8vw,40px);font-weight:800;text-transform:uppercase;letter-spacing:-0.01em;margin-bottom:12px;line-height:1;position:relative;z-index:2;}
+    .mobile-title span{color:var(--accent);}
     .hero{padding:86px clamp(16px,4vw,56px) 18px;}
     .eyebrow{font-size:10px;margin-bottom:2px;line-height:1.4;}
     .hero-stack{height:380px;width:72vw;}
@@ -449,6 +453,7 @@
 <section class="hero" id="hero">
   <div class="hero-blob"></div>
   <div class="eyebrow">Newcastle, NSW, Australia <span>&bull;</span> Available for opportunities</div>
+  <div class="mobile-title">Business <span>Analyst</span></div>
 
   <div class="hero-row">
     <div class="flank left"><span class="word">business</span></div>
@@ -1284,7 +1289,6 @@
   }, {threshold:0.4});
   counters.forEach(function(el){ cio.observe(el); });
 
-  /* pinned hero scrollytelling: filmstrip travels across the hero-wrap's scroll budget */
   var heroWrap = document.getElementById('heroWrap');
   var heroStack = document.getElementById('heroStack');
   var stackTrack = document.getElementById('stackTrack');
