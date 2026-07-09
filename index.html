@@ -318,9 +318,19 @@
     border:1px solid var(--line);border-radius:20px;
     padding:28px;min-height:320px;display:flex;flex-direction:column;justify-content:center;
     position:relative;overflow:hidden;
+    transition:transform .2s ease, border-color .3s ease;
+    transform:perspective(900px) rotateX(0deg) rotateY(0deg);
+    will-change:transform;
   }
   .viz.tall{min-height:480px;}
-  .viz svg{width:100%;height:auto;overflow:visible;}
+  .viz:hover{border-color:rgba(201,255,61,.35);}
+  .viz::before{
+    content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+    background:radial-gradient(280px circle at var(--mx,50%) var(--my,50%), rgba(201,255,61,.16), transparent 62%);
+    opacity:0;transition:opacity .35s ease;
+  }
+  .viz:hover::before{opacity:1;}
+  .viz svg{width:100%;height:auto;overflow:visible;position:relative;z-index:1;}
   .viz .vlabel{
     position:absolute;top:16px;left:20px;display:flex;align-items:center;gap:7px;
     font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);z-index:2;
@@ -334,11 +344,48 @@
   .pulse-dot{opacity:0;}
   .case.in .pulse-dot{opacity:1;animation:travel 3.2s linear infinite;}
   @keyframes travel{ 0%{offset-distance:0%;} 100%{offset-distance:100%;} }
-  .node{transform-origin:center;transform-box:fill-box;}
+  .node{transform-origin:center;transform-box:fill-box;transition:filter .2s ease;cursor:pointer;}
   .case.in .node{animation:nodepulse 2.4s ease-in-out infinite;}
   @keyframes nodepulse{0%,100%{transform:scale(1);}50%{transform:scale(1.15);}}
-  .bar{transform:scaleY(0);transform-origin:bottom;transition:transform 1s cubic-bezier(.2,.8,.2,1);}
+  .node:hover{filter:drop-shadow(0 0 10px var(--accent)) drop-shadow(0 0 3px var(--accent));}
+  .node.explored{filter:drop-shadow(0 0 7px var(--accent));}
+  .bar{transform:scaleY(0);transform-origin:bottom;transition:transform 1s cubic-bezier(.2,.8,.2,1), filter .2s ease;cursor:pointer;}
   .case.in .bar{transform:scaleY(1);}
+  .bar:hover{filter:brightness(1.5);}
+  .bar.explored{fill:var(--accent) !important;filter:brightness(1.15);}
+  .tick rect{transition:filter .2s ease, fill .2s ease;cursor:pointer;}
+  .tick:hover rect{filter:drop-shadow(0 0 6px var(--accent));}
+  .tick.explored rect{fill:rgba(201,255,61,.4) !important;}
+
+  /* ---------- click-to-explore diagrams ---------- */
+  .viz-counter{
+    position:absolute;top:16px;right:20px;z-index:2;
+    font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+    background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:999px;
+    padding:4px 11px;transition:color .3s ease,border-color .3s ease,background .3s ease;
+    pointer-events:none;user-select:none;
+  }
+  .viz-counter.done{color:var(--accent);border-color:var(--accent);background:rgba(201,255,61,.1);}
+  .viz.all-explored{border-color:var(--accent);box-shadow:0 0 0 1px rgba(201,255,61,.4), 0 0 30px rgba(201,255,61,.18);}
+  .viz-tip{
+    position:fixed;z-index:1000;left:0;top:0;
+    transform:translate(-50%,calc(-100% - 14px)) scale(.92);
+    background:#141412;border:1px solid var(--accent);border-radius:9px;
+    padding:9px 13px;font-size:12.5px;line-height:1.45;color:#f2f2ed;
+    width:max-content;max-width:min(240px, calc(100vw - 24px));text-align:left;
+    box-shadow:0 8px 28px rgba(0,0,0,.45);
+    opacity:0;pointer-events:none;transition:opacity .16s ease, transform .16s ease;
+  }
+  .viz-tip::after{
+    content:'';position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);
+    border:6px solid transparent;border-top-color:var(--accent);
+  }
+  .viz-tip.show{opacity:1;transform:translate(-50%,calc(-100% - 20px)) scale(1);}
+  .viz-tip.tip-below{transform:translate(-50%,14px) scale(.92);}
+  .viz-tip.tip-below::after{
+    top:-6px;bottom:auto;border-top-color:transparent;border-bottom-color:var(--accent);
+  }
+  .viz-tip.tip-below.show{transform:translate(-50%,20px) scale(1);}
   .fadeseq > *{opacity:0;transform:translateY(10px);transition:opacity .6s ease,transform .6s ease;}
   .case.in .fadeseq > *{opacity:1;transform:translateY(0);}
   .case.in .fadeseq > *:nth-child(1){transition-delay:.05s;}
@@ -684,32 +731,32 @@
         <circle r="4" fill="var(--accent)" class="pulse-dot" style="offset-path:path('M28,66 L86,66 L144,66 L202,66 L260,66 L312,66');animation-duration:4.5s;"/>
         <g class="fadeseq">
           <g>
-            <circle cx="28" cy="66" r="19" fill="#0d0d0b" stroke="var(--accent)" stroke-width="2" class="node" style="animation-delay:0s"/>
+            <circle cx="28" cy="66" r="19" fill="#0d0d0b" stroke="var(--accent)" stroke-width="2" class="node" style="animation-delay:0s" data-tip="Register: barcode/QR generated and the audit trail starts — the first stamp in the NATA ISO/IEC 17025 chain of custody."/>
             <rect x="21" y="59" width="2.4" height="14" fill="var(--accent)"/><rect x="25" y="59" width="1.4" height="14" fill="var(--accent)"/><rect x="28" y="59" width="2.4" height="14" fill="var(--accent)"/><rect x="32" y="59" width="1.4" height="14" fill="var(--accent)"/>
             <text x="28" y="94" text-anchor="middle" fill="var(--muted)" font-size="7">REGISTER</text>
           </g>
           <g>
-            <circle cx="86" cy="66" r="19" fill="#0d0d0b" stroke="rgba(242,242,237,.4)" stroke-width="2" class="node" style="animation-delay:.3s"/>
+            <circle cx="86" cy="66" r="19" fill="#0d0d0b" stroke="rgba(242,242,237,.4)" stroke-width="2" class="node" style="animation-delay:.3s" data-tip="Schedule: sample queued against instrument capacity across the 4 NSW sites this rollout covered."/>
             <path d="M79,66 a7,7 0 1,1 14,0" fill="none" stroke="#f2f2ed" stroke-width="1.4"/><line x1="86" y1="66" x2="86" y2="61" stroke="#f2f2ed" stroke-width="1.4"/><line x1="86" y1="66" x2="90" y2="68" stroke="#f2f2ed" stroke-width="1.4"/>
             <text x="86" y="94" text-anchor="middle" fill="var(--muted)" font-size="7">SCHEDULE</text>
           </g>
           <g>
-            <circle cx="144" cy="66" r="19" fill="#0d0d0b" stroke="rgba(242,242,237,.4)" stroke-width="2" class="node" style="animation-delay:.6s"/>
+            <circle cx="144" cy="66" r="19" fill="#0d0d0b" stroke="rgba(242,242,237,.4)" stroke-width="2" class="node" style="animation-delay:.6s" data-tip="Prep: sample handling tracked against SOP steps before it reaches the instrument."/>
             <rect x="137" y="60" width="14" height="12" rx="2" fill="none" stroke="#f2f2ed" stroke-width="1.4"/><line x1="140" y1="60" x2="140" y2="56" stroke="#f2f2ed" stroke-width="1.4"/><line x1="148" y1="60" x2="148" y2="56" stroke="#f2f2ed" stroke-width="1.4"/>
             <text x="144" y="94" text-anchor="middle" fill="var(--muted)" font-size="7">PREP</text>
           </g>
           <g>
-            <circle cx="202" cy="66" r="19" fill="#0d0d0b" stroke="rgba(242,242,237,.4)" stroke-width="2" class="node" style="animation-delay:.9s"/>
+            <circle cx="202" cy="66" r="19" fill="#0d0d0b" stroke="rgba(242,242,237,.4)" stroke-width="2" class="node" style="animation-delay:.9s" data-tip="Analyze: result captured straight from the instrument — the stage LECO's COM integration automated end to end."/>
             <path d="M195,72 L199,60 L203,68 L207,58 L209,72" fill="none" stroke="#f2f2ed" stroke-width="1.4" stroke-linejoin="round"/>
             <text x="202" y="94" text-anchor="middle" fill="var(--muted)" font-size="7">ANALYZE</text>
           </g>
           <g>
-            <circle cx="260" cy="66" r="19" fill="#0d0d0b" stroke="var(--accent)" stroke-width="2" class="node" style="animation-delay:1.2s"/>
+            <circle cx="260" cy="66" r="19" fill="#0d0d0b" stroke="var(--accent)" stroke-width="2" class="node" style="animation-delay:1.2s" data-tip="QC: the checkpoint this program was built around — role-based access, e-signatures, and automated chain-of-custody all gate here."/>
             <path d="M252,66 L258,72 L269,59" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
             <text x="260" y="94" text-anchor="middle" fill="var(--muted)" font-size="7">QC</text>
           </g>
           <g>
-            <circle cx="312" cy="66" r="19" fill="#0d0d0b" stroke="rgba(242,242,237,.4)" stroke-width="2" class="node" style="animation-delay:1.5s"/>
+            <circle cx="312" cy="66" r="19" fill="#0d0d0b" stroke="rgba(242,242,237,.4)" stroke-width="2" class="node" style="animation-delay:1.5s" data-tip="Report: final result issued with a complete audit trail, satisfying NATA ISO/IEC 17025's data-integrity criteria."/>
             <rect x="305" y="58" width="14" height="16" rx="1.5" fill="none" stroke="#f2f2ed" stroke-width="1.3"/><line x1="308" y1="63" x2="316" y2="63" stroke="#f2f2ed" stroke-width="1"/><line x1="308" y1="67" x2="316" y2="67" stroke="#f2f2ed" stroke-width="1"/><line x1="308" y1="71" x2="313" y2="71" stroke="#f2f2ed" stroke-width="1"/>
             <text x="312" y="94" text-anchor="middle" fill="var(--muted)" font-size="7">REPORT</text>
           </g>
@@ -718,7 +765,7 @@
         <line x1="0" y1="126" x2="340" y2="126" stroke="rgba(255,255,255,.08)"/>
         <text x="10" y="150" fill="var(--muted)" font-size="9" letter-spacing="1">MULTI-SITE NETWORK &mdash; G6 PROD2</text>
 
-        <circle cx="170" cy="290" r="30" fill="none" stroke="var(--accent)" stroke-width="2" class="node"/>
+        <circle cx="170" cy="290" r="30" fill="none" stroke="var(--accent)" stroke-width="2" class="node" data-tip="G6 PROD2 — the central instance every site was migrated onto, with legacy data and role-based training carried across."/>
         <text x="170" y="294" text-anchor="middle" fill="#f2f2ed" font-size="9" font-weight="700">G6 PROD2</text>
         <g stroke="rgba(242,242,237,.35)" stroke-width="1.5" fill="none">
           <path class="draw" d="M146.8,271 L63.2,202.8"/>
@@ -727,10 +774,10 @@
           <path class="draw" d="M148.6,311 L62.1,396.1"/>
         </g>
         <g fill="#0d0d0b" stroke="var(--accent2)" stroke-width="1.5">
-          <circle cx="50" cy="192" r="17" class="node"/>
-          <circle cx="320" cy="232" r="17" class="node"/>
-          <circle cx="320" cy="388" r="17" class="node"/>
-          <circle cx="50" cy="408" r="17" class="node"/>
+          <circle cx="50" cy="192" r="17" class="node" data-tip="Muswellbrook — one of the 4 NSW coal labs migrated with zero data loss."/>
+          <circle cx="320" cy="232" r="17" class="node" data-tip="Mount Thorley — role-based training delivered on-site for registration, entry, and reporting."/>
+          <circle cx="320" cy="388" r="17" class="node" data-tip="Wollongong — cut over on the phased rollout schedule alongside the other 3 sites."/>
+          <circle cx="50" cy="408" r="17" class="node" data-tip="Newcastle — final site live, holding 99.5% uptime across the first 18 months."/>
         </g>
         <g fill="#f2f2ed" font-size="7.5" text-anchor="middle">
           <text x="50" y="195">MUSW</text>
@@ -754,14 +801,14 @@
       <svg viewBox="0 0 340 360">
         <text x="10" y="26" fill="var(--accent2)" font-size="9" letter-spacing="1">BEFORE &mdash; MANUAL ENTRY</text>
         <g class="swap-out">
-          <rect x="10" y="40" width="70" height="46" rx="7" fill="#0d0d0b" stroke="rgba(242,242,237,.3)"/>
+          <rect x="10" y="40" width="70" height="46" rx="7" fill="#0d0d0b" stroke="rgba(242,242,237,.3)" class="node" data-tip="TruMac/TruSpec analyzer output — before integration, this had to be read off-screen and typed in by hand."/>
           <text x="45" y="67" text-anchor="middle" fill="#f2f2ed" font-size="8" font-weight="700">Analyzer</text>
           <path d="M85,63 L120,63" stroke="rgba(242,242,237,.3)" stroke-width="1.5" stroke-dasharray="4 4"/>
-          <rect x="125" y="40" width="70" height="46" rx="7" fill="#0d0d0b" stroke="var(--accent2)"/>
+          <rect x="125" y="40" width="70" height="46" rx="7" fill="#0d0d0b" stroke="var(--accent2)" class="node" data-tip="Manual re-key: the transcription step that was the main source of error on high-volume test days."/>
           <text x="160" y="60" text-anchor="middle" fill="#f2f2ed" font-size="8" font-weight="700">Manual</text>
           <text x="160" y="72" text-anchor="middle" fill="#f2f2ed" font-size="8" font-weight="700">re-key</text>
           <path d="M200,63 L235,63" stroke="rgba(242,242,237,.3)" stroke-width="1.5" stroke-dasharray="4 4"/>
-          <rect x="240" y="40" width="70" height="46" rx="7" fill="#0d0d0b" stroke="rgba(242,242,237,.3)"/>
+          <rect x="240" y="40" width="70" height="46" rx="7" fill="#0d0d0b" stroke="rgba(242,242,237,.3)" class="node" data-tip="G6 LIMS — same destination system, ~30% slower to reach under the manual process."/>
           <text x="275" y="67" text-anchor="middle" fill="#f2f2ed" font-size="8" font-weight="700">G6 LIMS</text>
           <line class="strike" x1="10" y1="45" x2="310" y2="82"/>
         </g>
@@ -771,15 +818,15 @@
         <text x="10" y="150" fill="var(--accent)" font-size="9" letter-spacing="1">AFTER &mdash; COM-AUTOMATED</text>
 
         <g class="fadeseq">
-          <rect x="10" y="164" width="72" height="48" rx="8" fill="#0d0d0b" stroke="rgba(242,242,237,.3)"/>
+          <rect x="10" y="164" width="72" height="48" rx="8" fill="#0d0d0b" stroke="rgba(242,242,237,.3)" class="node" data-tip="TruMac/TruSpec run combustion-based proximate and ultimate analysis for coal quality — moisture, ash, volatile matter, calorific value."/>
           <text x="46" y="184" text-anchor="middle" fill="#f2f2ed" font-size="8" font-weight="700">TruMac /</text>
           <text x="46" y="196" text-anchor="middle" fill="#f2f2ed" font-size="8" font-weight="700">TruSpec</text>
 
-          <rect x="122" y="164" width="80" height="48" rx="8" fill="#0d0d0b" stroke="var(--accent)"/>
+          <rect x="122" y="164" width="80" height="48" rx="8" fill="#0d0d0b" stroke="var(--accent)" class="node" data-tip="COM Interface — the bidirectional pathway engineered to eliminate manual re-entry, including sample ID verification."/>
           <text x="162" y="184" text-anchor="middle" fill="#f2f2ed" font-size="8" font-weight="700">COM</text>
           <text x="162" y="196" text-anchor="middle" fill="#f2f2ed" font-size="8" font-weight="700">Interface</text>
 
-          <rect x="242" y="164" width="80" height="48" rx="8" fill="#0d0d0b" stroke="var(--accent)"/>
+          <rect x="242" y="164" width="80" height="48" rx="8" fill="#0d0d0b" stroke="var(--accent)" class="node" data-tip="G6 LIMS ingest — real-time result import, no manual keying, 100% of transcription errors removed."/>
           <text x="282" y="184" text-anchor="middle" fill="#f2f2ed" font-size="8" font-weight="700">G6 LIMS</text>
           <text x="282" y="196" text-anchor="middle" fill="#f2f2ed" font-size="8" font-weight="700">ingest</text>
         </g>
@@ -834,12 +881,12 @@
       <svg viewBox="0 0 340 400">
         <text x="10" y="26" fill="var(--muted)" font-size="9" letter-spacing="1">BANKER'S-ROUNDING DEFECT</text>
         <g class="fadeseq">
-          <rect x="10" y="40" width="150" height="60" rx="8" fill="#0d0d0b" stroke="var(--accent2)" stroke-width="1.5"/>
+          <rect x="10" y="40" width="150" height="60" rx="8" fill="#0d0d0b" stroke="var(--accent2)" stroke-width="1.5" class="node" data-tip="VBScript's default rounding silently rounds to the nearest even digit — quietly skewing environmental compliance results."/>
           <text x="85" y="60" text-anchor="middle" fill="var(--muted)" font-size="7.5">Raw value: 12.345</text>
           <text x="85" y="80" text-anchor="middle" fill="var(--accent2)" font-size="12" font-weight="700" text-decoration="line-through">12.34</text>
           <text x="85" y="93" text-anchor="middle" fill="var(--accent2)" font-size="7">rounds to even &mdash; wrong</text>
 
-          <rect x="180" y="40" width="150" height="60" rx="8" fill="#0d0d0b" stroke="var(--accent)" stroke-width="1.5"/>
+          <rect x="180" y="40" width="150" height="60" rx="8" fill="#0d0d0b" stroke="var(--accent)" stroke-width="1.5" class="node" data-tip="Fix applied: standard arithmetic rounding restored — result accuracy and audit compliance both back in spec."/>
           <text x="255" y="60" text-anchor="middle" fill="var(--muted)" font-size="7.5">Raw value: 12.345</text>
           <text x="255" y="80" text-anchor="middle" fill="var(--accent)" font-size="12" font-weight="700">12.35</text>
           <text x="255" y="93" text-anchor="middle" fill="var(--accent)" font-size="7">arithmetic rounding &mdash; fixed</text>
@@ -850,15 +897,15 @@
         <text x="10" y="144" fill="var(--muted)" font-size="9" letter-spacing="1">CRYSTAL REPORTS "ERROR 91"</text>
 
         <text x="10" y="164" fill="var(--muted)" font-size="7.5">Analyte columns rendered on report page:</text>
-        <g class="tick">
+        <g class="tick" data-tip="Analyte columns 1–2 of 9 — well inside the page's runtime rendering boundary.">
           <rect x="10" y="176" width="26" height="34" fill="rgba(255,255,255,.12)"/>
           <rect x="40" y="176" width="26" height="34" fill="rgba(255,255,255,.12)"/>
         </g>
-        <g class="tick"><rect x="70" y="176" width="26" height="34" fill="rgba(255,255,255,.12)"/></g>
-        <g class="tick"><rect x="100" y="176" width="26" height="34" fill="rgba(255,255,255,.12)"/></g>
-        <g class="tick"><rect x="130" y="176" width="26" height="34" fill="rgba(255,255,255,.12)"/></g>
-        <g class="tick"><rect x="160" y="176" width="26" height="34" fill="rgba(255,255,255,.12)"/></g>
-        <g class="tick"><rect x="190" y="176" width="26" height="34" fill="rgba(255,255,255,.12)"/></g>
+        <g class="tick" data-tip="Column 3 — still safely within bounds."><rect x="70" y="176" width="26" height="34" fill="rgba(255,255,255,.12)"/></g>
+        <g class="tick" data-tip="Column 4 — job now has enough analytes to start approaching the limit."><rect x="100" y="176" width="26" height="34" fill="rgba(255,255,255,.12)"/></g>
+        <g class="tick" data-tip="Column 5 — the report keeps rendering, but the page boundary is getting close."><rect x="130" y="176" width="26" height="34" fill="rgba(255,255,255,.12)"/></g>
+        <g class="tick" data-tip="Column 6 — this was as far as most jobs pushed before the fix."><rect x="160" y="176" width="26" height="34" fill="rgba(255,255,255,.12)"/></g>
+        <g class="tick" data-tip="Column 7 — a job with 9 analytes would already be failing here on the old fixed-width report."><rect x="190" y="176" width="26" height="34" fill="rgba(255,255,255,.12)"/></g>
         <line x1="228" y1="170" x2="228" y2="216" stroke="var(--accent2)" stroke-width="1.5" stroke-dasharray="3 3"/>
         <text x="232" y="167" fill="var(--accent2)" font-size="7">page boundary</text>
         <rect x="230" y="176" width="26" height="34" fill="var(--accent2)" opacity=".5" class="swap-out"/>
@@ -910,7 +957,7 @@
           <text x="165" y="126" fill="#f2f2ed">RESULT_UNIT</text>
           <text x="165" y="146" fill="#f2f2ed">MATRIX_CODE</text>
         </g>
-        <g class="tick" fill="var(--accent)" font-size="10" font-weight="700">
+        <g class="tick" fill="var(--accent)" font-size="10" font-weight="700" data-tip="All 6 core fields validated — SQL export logic, column mapping, and depth/matrix rules checked on every one of the 20+ revisions.">
           <text x="300" y="46">&#10003;</text><text x="300" y="66">&#10003;</text><text x="300" y="86">&#10003;</text>
           <text x="300" y="106">&#10003;</text><text x="300" y="126">&#10003;</text><text x="300" y="146">&#10003;</text>
         </g>
@@ -918,15 +965,15 @@
         <line x1="0" y1="170" x2="340" y2="170" stroke="rgba(255,255,255,.08)"/>
         <text x="10" y="194" fill="var(--muted)" font-size="9" letter-spacing="1">REVISIONS TO CLIENT SIGN-OFF</text>
         <g class="fadeseq">
-          <rect class="bar" width="20" height="90" x="20" y="210" fill="rgba(242,242,237,.15)"/>
-          <rect class="bar" width="20" height="90" x="52" y="210" fill="rgba(242,242,237,.15)" style="transition-delay:.05s"/>
-          <rect class="bar" width="20" height="90" x="84" y="210" fill="rgba(242,242,237,.15)" style="transition-delay:.1s"/>
-          <rect class="bar" width="20" height="90" x="116" y="210" fill="var(--accent)" style="transition-delay:.15s"/>
-          <rect class="bar" width="20" height="90" x="148" y="210" fill="rgba(242,242,237,.15)" style="transition-delay:.2s"/>
-          <rect class="bar" width="20" height="90" x="180" y="210" fill="var(--accent)" style="transition-delay:.25s"/>
-          <rect class="bar" width="20" height="90" x="212" y="210" fill="rgba(242,242,237,.15)" style="transition-delay:.3s"/>
-          <rect class="bar" width="20" height="90" x="244" y="210" fill="var(--accent)" style="transition-delay:.35s"/>
-          <rect class="bar" width="20" height="90" x="276" y="210" fill="rgba(242,242,237,.15)" style="transition-delay:.4s"/>
+          <rect class="bar" width="20" height="90" x="20" y="210" fill="rgba(242,242,237,.15)" data-tip="Minor revision — field-mapping tweak, no client re-approval needed."/>
+          <rect class="bar" width="20" height="90" x="52" y="210" fill="rgba(242,242,237,.15)" style="transition-delay:.05s" data-tip="Minor revision — validation rule refinement."/>
+          <rect class="bar" width="20" height="90" x="84" y="210" fill="rgba(242,242,237,.15)" style="transition-delay:.1s" data-tip="Minor revision — depth/matrix formatting fix."/>
+          <rect class="bar" width="20" height="90" x="116" y="210" fill="var(--accent)" style="transition-delay:.15s" data-tip="Major revision — structural column-mapping change requiring Kleinfelder sign-off."/>
+          <rect class="bar" width="20" height="90" x="148" y="210" fill="rgba(242,242,237,.15)" style="transition-delay:.2s" data-tip="Minor revision — SQL export logic cleanup."/>
+          <rect class="bar" width="20" height="90" x="180" y="210" fill="var(--accent)" style="transition-delay:.25s" data-tip="Major revision — data-delivery requirement change from the client, re-validated end to end."/>
+          <rect class="bar" width="20" height="90" x="212" y="210" fill="rgba(242,242,237,.15)" style="transition-delay:.3s" data-tip="Minor revision — matrix-code correction."/>
+          <rect class="bar" width="20" height="90" x="244" y="210" fill="var(--accent)" style="transition-delay:.35s" data-tip="Major revision — the update that became the repeatable, client-approved account standard."/>
+          <rect class="bar" width="20" height="90" x="276" y="210" fill="rgba(242,242,237,.15)" style="transition-delay:.4s" data-tip="Minor revision — final polish before sign-off."/>
         </g>
         <text x="170" y="345" text-anchor="middle" fill="#f2f2ed" font-size="22" font-weight="800" data-count="21" class="num" data-prefix="v">v0</text>
         <text x="170" y="365" text-anchor="middle" fill="var(--muted)" font-size="9">export spec revisions &mdash; SQL logic, column mapping, depth/matrix rules</text>
@@ -976,13 +1023,13 @@
 
         <g stroke="rgba(255,255,255,.08)"><line x1="20" y1="90" x2="20" y2="230"/><line x1="20" y1="230" x2="320" y2="230"/></g>
         <g class="fadeseq">
-          <rect class="bar" x="35" y="120" width="16" height="110" fill="rgba(242,242,237,.18)"/>
-          <rect class="bar" x="65" y="150" width="16" height="80" fill="rgba(242,242,237,.18)" style="transition-delay:.05s"/>
-          <rect class="bar" x="95" y="100" width="16" height="130" fill="rgba(242,242,237,.18)" style="transition-delay:.1s"/>
-          <rect class="bar" x="125" y="170" width="16" height="60" fill="rgba(242,242,237,.18)" style="transition-delay:.15s"/>
-          <rect class="bar" x="155" y="90" width="16" height="140" fill="rgba(242,242,237,.18)" style="transition-delay:.2s"/>
-          <rect class="bar" x="185" y="130" width="16" height="100" fill="rgba(242,242,237,.18)" style="transition-delay:.25s"/>
-          <rect class="bar" x="215" y="160" width="16" height="70" fill="rgba(242,242,237,.18)" style="transition-delay:.3s"/>
+          <rect class="bar" x="35" y="120" width="16" height="110" fill="rgba(242,242,237,.18)" data-tip="Mon — turnaround volume pulled live from G6 LIMS via direct SQL Server connection."/>
+          <rect class="bar" x="65" y="150" width="16" height="80" fill="rgba(242,242,237,.18)" style="transition-delay:.05s" data-tip="Tue — lighter volume day, still inside the 6.2h average TAT."/>
+          <rect class="bar" x="95" y="100" width="16" height="130" fill="rgba(242,242,237,.18)" style="transition-delay:.1s" data-tip="Wed — peak volume of the week, instrument utilization near capacity."/>
+          <rect class="bar" x="125" y="170" width="16" height="60" fill="rgba(242,242,237,.18)" style="transition-delay:.15s" data-tip="Thu — quietest day, QC pass rate held at 98.4%."/>
+          <rect class="bar" x="155" y="90" width="16" height="140" fill="rgba(242,242,237,.18)" style="transition-delay:.2s" data-tip="Fri — highest throughput day, replacing what used to be a static end-of-week spreadsheet report."/>
+          <rect class="bar" x="185" y="130" width="16" height="100" fill="rgba(242,242,237,.18)" style="transition-delay:.25s" data-tip="Sat — reduced weekend staffing, dashboard still live and current."/>
+          <rect class="bar" x="215" y="160" width="16" height="70" fill="rgba(242,242,237,.18)" style="transition-delay:.3s" data-tip="Sun — lowest volume, closing out the week's operational view."/>
         </g>
         <path class="draw" d="M43,150 L73,135 L103,115 L133,145 L163,95 L193,120 L223,105" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
         <text x="320" y="86" text-anchor="end" fill="var(--accent)" font-size="9" font-weight="700">Live QC visibility</text>
@@ -1029,7 +1076,7 @@
         <text x="45" y="105" text-anchor="middle" fill="var(--muted)" font-size="7.5">Barcode scan</text>
         <path class="flowdash" d="M84,55 L118,55" stroke="var(--accent)" stroke-width="2" fill="none"/>
 
-        <circle cx="150" cy="55" r="26" fill="none" stroke="var(--accent)" stroke-width="2" class="node"/>
+        <circle cx="150" cy="55" r="26" fill="none" stroke="var(--accent)" stroke-width="2" class="node" data-tip="ID match — barcode scan verified against the sample record before any result is accepted, removing manual ID entry from the chain."/>
         <path d="M141,55 L147,61 L160,45" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
         <text x="150" y="105" text-anchor="middle" fill="var(--muted)" font-size="7.5">ID match</text>
         <path class="flowdash" d="M180,55 L214,55" stroke="var(--accent)" stroke-width="2" fill="none"/>
@@ -1144,10 +1191,10 @@
         <text x="10" y="204" fill="var(--muted)" font-size="9" letter-spacing="1">INCIDENT TIMELINE</text>
         <path class="draw" d="M20,230 L320,230" stroke="rgba(242,242,237,.3)" stroke-width="1.5" fill="none"/>
         <g class="fadeseq" font-size="7.5" text-anchor="middle">
-          <circle cx="20" cy="230" r="8" fill="var(--accent2)" class="node"/><text x="20" y="252" fill="var(--muted)">Detected</text>
-          <circle cx="120" cy="230" r="8" fill="rgba(242,242,237,.5)" class="node" style="animation-delay:.3s"/><text x="120" y="252" fill="var(--muted)">Directory fault</text>
-          <circle cx="220" cy="230" r="8" fill="rgba(242,242,237,.5)" class="node" style="animation-delay:.6s"/><text x="220" y="252" fill="var(--muted)">Config fix</text>
-          <circle cx="320" cy="230" r="8" fill="var(--accent)" class="node" style="animation-delay:.9s"/><text x="320" y="252" fill="var(--muted)">Verified</text>
+          <circle cx="20" cy="230" r="8" fill="var(--accent2)" class="node" data-tip="Detected — automated BOSSAR invoicing failed in production, flagged before it affected billing cycles."/><text x="20" y="252" fill="var(--muted)">Detected</text>
+          <circle cx="120" cy="230" r="8" fill="rgba(242,242,237,.5)" class="node" style="animation-delay:.3s" data-tip="Directory fault — root cause isolated via the ServiceNow portal I'd restructured for faster tier hand-offs."/><text x="120" y="252" fill="var(--muted)">Directory fault</text>
+          <circle cx="220" cy="230" r="8" fill="rgba(242,242,237,.5)" class="node" style="animation-delay:.6s" data-tip="Config fix — directory configuration corrected, normal invoice processing restored."/><text x="220" y="252" fill="var(--muted)">Config fix</text>
+          <circle cx="320" cy="230" r="8" fill="var(--accent)" class="node" style="animation-delay:.9s" data-tip="Verified — resolved before billing impact; the Alexandria turbidity export fix was formalized into an SOP the same way."/><text x="320" y="252" fill="var(--muted)">Verified</text>
         </g>
         <text x="170" y="290" text-anchor="middle" fill="var(--accent)" font-size="9" font-weight="700">SOP authored for Laboratory Manager</text>
         <text x="170" y="308" text-anchor="middle" fill="var(--muted)" font-size="7.5">turbidity LIMS export workflow &mdash; Alexandria</text>
@@ -1187,6 +1234,9 @@
         <button class="skill-tag" data-detail="Root-caused a recurring Crystal Reports 'Error 91' in the Portsmith Analytical Report and extended SSRS revenue reporting with job-level traceability.">Crystal Reports / SSRS</button>
         <button class="skill-tag" data-detail="Owned the custom EQuIS EDD export specification for client Kleinfelder across 20+ revisions — SQL logic, column mapping, depth/matrix validation.">EQuIS EDD</button>
         <button class="skill-tag" data-detail="Engineered and optimized SGS IT's ServiceNow ticketing portal, then used it to isolate a production BOSSAR invoicing incident to a directory configuration fault.">ServiceNow</button>
+        <button class="skill-tag" data-detail="The same instinct that automated G6 LIMS QC flagging and cut manual review 60%+ via Power Automate now extends to Python against the OpenAI and Anthropic APIs — scripting LLM-assisted defect triage and report drafting on top of production LIMS workflows.">Python &amp; LLM APIs</button>
+        <button class="skill-tag" data-detail="20+ revisions of the EQuIS EDD export spec and years of LIMS SOP documentation are exactly the kind of operational knowledge RAG is built to surface — architecting LangChain pipelines over vector stores (FAISS/Chroma) to ground LLM answers in that documentation instead of generic web content.">RAG / Vector DBs</button>
+        <button class="skill-tag" data-detail="Root-caused a banker's-rounding defect buried in VBScript and a recurring Crystal Reports Error 91 — the same diagnostic rigor now applied to building and evaluating PyTorch/Hugging Face models with production-grade discipline, not tutorial-level exploration.">ML Frameworks (PyTorch)</button>
       </div>
       <div class="skill-detail" id="detail-tech"><h5></h5><p></p></div>
     </div>
@@ -1326,6 +1376,78 @@
   });
   hero.addEventListener('mouseleave', function(){
     idCard.style.transform = 'translate(-50%,-50%)';
+  });
+
+  /* interactive project panels — cursor spotlight + tilt */
+  document.querySelectorAll('.viz').forEach(function(viz){
+    viz.addEventListener('mousemove', function(e){
+      var r = viz.getBoundingClientRect();
+      var px = (e.clientX - r.left) / r.width;
+      var py = (e.clientY - r.top) / r.height;
+      viz.style.setProperty('--mx', (px*100) + '%');
+      viz.style.setProperty('--my', (py*100) + '%');
+      var rx = (0.5 - py) * 8;
+      var ry = (px - 0.5) * 8;
+      viz.style.transform = 'perspective(900px) rotateX(' + rx + 'deg) rotateY(' + ry + 'deg)';
+    });
+    viz.addEventListener('mouseleave', function(){
+      viz.style.transform = 'perspective(900px) rotateX(0deg) rotateY(0deg)';
+    });
+  });
+
+  /* click-to-explore: diagram nodes/bars/ticks reveal detail + track progress */
+  document.querySelectorAll('.viz').forEach(function(viz){
+    var targets = viz.querySelectorAll('.node, .bar, .tick');
+    if(!targets.length) return;
+
+    var counter = document.createElement('div');
+    counter.className = 'viz-counter';
+    counter.textContent = '0 / ' + targets.length + ' explored';
+    viz.appendChild(counter);
+
+    var tip = document.createElement('div');
+    tip.className = 'viz-tip';
+    document.body.appendChild(tip);
+
+    var explored = new Set();
+    var hideTimer = null;
+
+    function positionTip(el){
+      var er = el.getBoundingClientRect();
+      var cx = Math.min(Math.max(er.left + er.width/2, 130), window.innerWidth - 130);
+      var showBelow = er.top < 90;
+      tip.classList.toggle('tip-below', showBelow);
+      tip.style.left = cx + 'px';
+      tip.style.top = (showBelow ? er.bottom : er.top) + 'px';
+    }
+
+    targets.forEach(function(el){
+      el.addEventListener('click', function(ev){
+        ev.stopPropagation();
+        var text = el.getAttribute('data-tip');
+        if(text){
+          positionTip(el);
+          tip.textContent = text;
+          tip.classList.add('show');
+          clearTimeout(hideTimer);
+          hideTimer = setTimeout(function(){ tip.classList.remove('show'); }, 2600);
+        }
+        if(!explored.has(el)){
+          explored.add(el);
+          el.classList.add('explored');
+          counter.textContent = explored.size + ' / ' + targets.length + ' explored';
+          if(explored.size === targets.length){
+            counter.classList.add('done');
+            counter.textContent = 'All explored';
+            viz.classList.add('all-explored');
+          }
+        }
+      });
+    });
+
+    viz.addEventListener('mouseleave', function(){
+      tip.classList.remove('show');
+    });
   });
 
   /* clickable skill tags */
